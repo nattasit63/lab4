@@ -48,6 +48,7 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 uint32_t ADCData[4]={0};
 uint32_t time1=0;
+double time2=0;
 uint32_t randomtime=0;
 uint8_t  s[2]={0};
 uint32_t timeled=0;
@@ -105,8 +106,8 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
-HAL_ADC_Start_DMA(&hadc1, ADCData, 4);
+HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
+HAL_ADC_Start_DMA(&hadc1, ADCData, 2);
 
   /* USER CODE END 2 */
 
@@ -114,6 +115,10 @@ HAL_ADC_Start_DMA(&hadc1, ADCData, 4);
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+		  time2=HAL_GetTick();
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -204,7 +209,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -332,22 +337,35 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 	if(GPIO_Pin == GPIO_PIN_13)
 	{
-	 if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)==GPIO_PIN_RESET)
-	 {
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);
-	  if(HAL_GetTick()-time1>=1000)
-	  {
-		time1=HAL_GetTick();
-	  }
-	  else{
 
-	  }
+	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
+	 if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)==GPIO_PIN_RESET)
+	 {
+		 while(1)
+		 {
+
+		 //time1 = time2;
+		 randomtime=3000;
+		  //randomtime= 1000+((22695477*ADCData[0])+ADCData[1])%10000 ;
+		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);
+		  time1=HAL_GetTick();
+
+		  timeled = time2-time1;
+//		  if(time2-time1>=randomtime)
+//			  {
+//			  final=1;
+//			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
+//
+//			  }
+			}
+
 	 }
 
-	 if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)==GPIO_PIN_SET)
-	 {
 
-	 }
+
+
+
 
 	}
 
