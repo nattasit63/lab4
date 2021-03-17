@@ -46,16 +46,17 @@ DMA_HandleTypeDef hdma_adc1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-uint32_t ADCData[4]={0};
+uint32_t ADCData[2]={0};
 uint32_t time1=0;
-double time2=0;
+uint32_t time2=0;
 uint32_t randomtime=0;
 uint8_t  s[2]={0};
-uint32_t timeled=0;
+uint32_t deltatime=0;
 uint32_t release=0;
 uint32_t final=0;
 uint32_t timesampling=0;
-uint32_t samplingtime=100;
+uint32_t timeled=0;
+uint32_t n=0;
 
 /* USER CODE END PV */
 
@@ -115,8 +116,20 @@ HAL_ADC_Start_DMA(&hadc1, ADCData, 2);
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	time2=HAL_GetTick();
+	if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)==GPIO_PIN_RESET)
+	{
+		deltatime = time2-time1;
+		if(deltatime>=randomtime && n==63)
+			 {
+				timeled = HAL_GetTick();
+				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
+ 				n=0;
+			 }
+	}
 
-		  time2=HAL_GetTick();
+// release = HAL_GetTick();
+//				   final = release - randomtime;
 
 
     /* USER CODE END WHILE */
@@ -198,7 +211,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 4;
+  hadc1.Init.NbrOfConversion = 2;
   hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
@@ -218,22 +231,6 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = 2;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
-  sConfig.Rank = 3;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-  sConfig.Channel = ADC_CHANNEL_VREFINT;
-  sConfig.Rank = 4;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -313,8 +310,8 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LD2_Pin */
@@ -337,36 +334,29 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 	if(GPIO_Pin == GPIO_PIN_13)
 	{
-
-	//HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
 	 if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)==GPIO_PIN_RESET)
 	 {
-		 while(1)
-		 {
-
-		 //time1 = time2;
-		 randomtime=3000;
-		  //randomtime= 1000+((22695477*ADCData[0])+ADCData[1])%10000 ;
+		 time1 = HAL_GetTick();
+		 //randomtime=3000;
+		  randomtime= 1000+((22695477*ADCData[0])+ADCData[1])%10000 ;
 		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);
-		  time1=HAL_GetTick();
-
-		  timeled = time2-time1;
-//		  if(time2-time1>=randomtime)
-//			  {
-//			  final=1;
-//			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
-//
-//			  }
-			}
+		  n=63;
 
 	 }
+	 if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)==GPIO_PIN_SET)
+		    	 {
 
+		    	   release = HAL_GetTick();
+		    	   if (deltatime>=randomtime)
+		    	   {
 
-
-
-
-
+		    		 final  = release - timeled;
+		    	   }
+		    	   else
+		    	   {
+		    		   final = 0;
+		    	   }
+		    	 }
 	}
 
 }
